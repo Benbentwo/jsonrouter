@@ -129,7 +129,7 @@ jobs:
           event-type: upload-helm
           client-payload: '
             {
-              "repository": "${{steps.docker_build.outputs.repo}}",
+              "repository": "${{github.server_url}}/${{github.repository}}",
               "helm_chart": "${{steps.helm-package.outputs.helm_package}}",
               "chart_url": "https://github.com/${{github.repository}}/releases/download/${{steps.docker_build.outputs.version}}/${{steps.docker_build.outputs.repo}}-${{steps.docker_build.outputs.version}}.tgz",
               "version": "${{steps.docker_build.outputs.version}}"
