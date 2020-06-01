@@ -91,11 +91,10 @@ jobs:
         if: github.event.pull_request.merged
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
-          name: ${{ steps.docker_build.outputs.repo }}
+          name: ${{ secrets.DOCKER_HUB_USER }}/${{ steps.docker_build.outputs.repo }}
           username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
           tags: "latest,${{steps.docker_build.outputs.version}}"
-          registry: ${{ secrets.DOCKER_HUB_USER }}
 
       # https://github.com/marketplace/actions/create-a-release
       - name: Create Release
