@@ -86,6 +86,16 @@ jobs:
           tags: "latest,${{steps.docker_build.outputs.version}}"
           registry: docker.pkg.github.com
 
+      - name: Publish to DockerHub
+        if: github.event.pull_request.merged
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: ${{ steps.docker_build.outputs.repo }}
+          username: ${{ secrets.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+          tags: "latest,${{steps.docker_build.outputs.version}}"
+          registry: bensmithdeveloper
+
       # https://github.com/marketplace/actions/create-a-release
       - name: Create Release
         if: github.event.pull_request.merged
@@ -103,7 +113,7 @@ jobs:
       - run: |
           repo=${{steps.docker_build.outputs.repo}}
 
-          sed -E -i 's@(repository: \w*)@repository: docker.pkg.github.com/${{ steps.docker_build.outputs.github_image }}@g' charts/${repo}/values.yaml
+          sed -E -i 's@(repository: \w*)@repository: bensmithdeveloper/${{ steps.docker_build.outputs.repo }}@g' charts/${repo}/values.yaml
           sed -E -i 's@(tag: \w*)@tag: ${{steps.docker_build.outputs.version}}@g' charts/${repo}/values.yaml
 
           helm package --app-version=${{steps.docker_build.outputs.version}} --version=${{steps.docker_build.outputs.version}} charts/${repo}
