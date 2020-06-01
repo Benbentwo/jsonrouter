@@ -15,8 +15,7 @@ jobs:
       - name: Publish to DockerHub
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
-          name: ${{ github.docker_build.outputs.repo }}
+          name: ${{ secrets.DOCKER_HUB_USER }}/${{ steps.docker_build.outputs.repo }}
           username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
           tags: "latest,${{env.GITHUB_REF}}"
-          registry: ${{ secrets.DOCKER_HUB_USER }}
