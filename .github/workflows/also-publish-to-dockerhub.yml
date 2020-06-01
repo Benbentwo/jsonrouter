@@ -3,20 +3,20 @@
 ## want the dockerhub image in the helm chart I don't want to release helmcharts with images that don't exist -
 ## which could be the case if this job fails for some reason
 ## -----------------
-#name: Publish to DockerHub
-#on:
-#  registry_package:
-#    types: [published]
-#
-#jobs:
-#  build:
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Publish to DockerHub
-#        uses: elgohr/Publish-Docker-Github-Action@master
-#        with:
-#          name: ${{ github.docker_build.outputs.repo }}
-#          username: ${{ secrets.DOCKER_HUB_USER }}
-#          password: ${{ secrets.DOCKER_HUB_TOKEN }}
-#          tags: "latest,${{env.GITHUB_REF}}"
-#          registry: ${{ secrets.DOCKER_HUB_USER }}
+name: Publish to DockerHub
+on:
+  registry_package:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish to DockerHub
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: ${{ github.docker_build.outputs.repo }}
+          username: ${{ secrets.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+          tags: "latest,${{env.GITHUB_REF}}"
+          registry: ${{ secrets.DOCKER_HUB_USER }}
