@@ -1,69 +1,31 @@
 name: Merged
 on:
-  pull_request:
-    types: [closed]
+  push:
     branches:
       - master
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged
     steps:
-
       - name: Checkout
-        if: github.event.pull_request.merged
         uses: actions/checkout@v1
 
-      - name: Determine Release Type From PR
-        if: github.event.pull_request.merged
+      - name: Pull request merged
         id: get-release-type
         run: |
-          if [[ "${{github.event.pull_request.state}}" == "closed" ]] || [[ "${{github.event.pull_request.merged}}" == "true" ]]; then
-            echo "##[set-output name=merged;]true"
-            echo '${{toJson(github.event.pull_request)}}' > data.json
-            jq -r '.labels[] | .name' data.json > labels.txt
-            while IFS= read -r name; do
-              echo "Looking at label: \"${name}\""
-              if [[ ${name} =~ [rR]elease\ ([A-Za-z0-9_]+) ]] ; then
-                release_type=${BASH_REMATCH[1]}
-                echo "ReleaseType set to: \"${release_type}\""
-                if echo $release_type | grep -iqF patch; then
-                  echo "Setting to Patch"
-                  echo "##[set-output name=release-type;]patch"
-                  echo "##[set-output name=release-command;]-p"
-                elif echo $release_type | grep -iqF minor; then
-                  echo "Setting to Minor"
-                  echo "##[set-output name=release-type;]minor"
-                  echo "##[set-output name=release-command;]-m"
-                elif echo $release_type | grep -iqF major; then
-                  echo "Setting to Major"
-                  echo "##[set-output name=release-type;]major"
-                  echo "##[set-output name=release-command;]-M"
-                else
-                  echo "Not sure what release this is, defaulting to patch"
-                  echo "##[set-output name=release-type;]patch"
-                  echo "##[set-output name=release-command;]-p"
-                fi
-              fi
-            done < labels.txt
-          else
-            echo "Was not started by pull request, setting to patch"
-            echo "##[set-output name=release-type;]patch"
-            echo "##[set-output name=release-command;]-p"
-          fi
+          echo "##[set-output name=release-type;]patch"
+          echo "##[set-output name=release-command;]-p"
 
       # https://github.com/Benbentwo/increment-semver
       - name: Increment Step Patch
-        if: github.event.pull_request.merged
         id: increment-semver-patch
         uses: Benbentwo/increment-semver@master
         with:
           version-level: "${{steps.get-release-type.outputs.release-command}}"
 
       #       Tag = <BranchName (Tag Safe)>-<Short Commit Hash>
-      - if: github.event.pull_request.merged
-        run: |
+      - run: |
           tag=${{ steps.increment-semver-patch.outputs.version }}
           repository=$(echo ${{github.repository}} | tr '[:upper:]' '[:lower:]')
           repo=$(echo ${{github.repository}} | awk -F '/' '{ print $2 }' | tr '[:upper:]' '[:lower:]')
@@ -77,7 +39,6 @@ jobs:
         id: docker_build
 
       - name: Publish to Github Packages
-        if: github.event.pull_request.merged
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
           name: ${{ steps.docker_build.outputs.github_image }}
@@ -88,7 +49,6 @@ jobs:
 
 #TODO move this to also publish to dockerhub workflow
       - name: Publish to DockerHub
-        if: github.event.pull_request.merged
         uses: elgohr/Publish-Docker-Github-Action@master
         with:
           name: ${{ steps.docker_build.outputs.repo }}
@@ -99,7 +59,6 @@ jobs:
 
       # https://github.com/marketplace/actions/create-a-release
       - name: Create Release
-        if: github.event.pull_request.merged
         id: create_release
         uses: actions/create-release@latest
         env:
@@ -114,7 +73,7 @@ jobs:
       - run: |
           repo=${{steps.docker_build.outputs.repo}}
 
-          sed -E -i 's@(repository: \w*)@repository: bensmithdeveloper/${{ steps.docker_build.outputs.repo }}@g' charts/${repo}/values.yaml
+          sed -E -i 's@(repository: \w*)@repository: ${{ secrets.DOCKER_HUB_USER }}/${{ steps.docker_build.outputs.repo }}@g' charts/${repo}/values.yaml
           sed -E -i 's@(tag: \w*)@tag: ${{steps.docker_build.outputs.version}}@g' charts/${repo}/values.yaml
 
           helm package --app-version=${{steps.docker_build.outputs.version}} --version=${{steps.docker_build.outputs.version}} charts/${repo}
@@ -123,7 +82,6 @@ jobs:
         id: helm-package
 
       - name: Upload Helm Package to release
-        if: github.event.pull_request.merged
         uses: svenstaro/upload-release-action@v1-release
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
